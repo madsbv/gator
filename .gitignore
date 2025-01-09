@@ -5,3 +5,4 @@ tmp/
 /postgres/
 /.direnv/
 .env
+/gator

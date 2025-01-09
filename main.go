@@ -35,6 +35,7 @@ func run() error {
 	cmds.Register("login", command.HandlerLogin)
 	cmds.Register("register", command.HandlerRegister)
 	cmds.Register("reset", command.HandlerReset)
+	cmds.Register("agg", command.HandlerAgg)
 
 	args := os.Args
 	if len(args) < 2 {

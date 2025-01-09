@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/madsbv/gator/internal/database"
+	"github.com/madsbv/gator/internal/rss"
 	"github.com/madsbv/gator/internal/state"
 )
 
@@ -84,4 +85,14 @@ func HandlerReset(s *state.State, cmd Command) error {
 	}
 
 	return s.Db.DeleteAllUsers(context.Background())
+}
+
+func HandlerAgg(s *state.State, cmd Command) error {
+	url := "https://www.wagslane.dev/index.xml"
+	feed, err := rss.FetchFeed(context.Background(), url)
+	if err != nil {
+		return errors.New(fmt.Sprintf("Error fetching feed at %s: %s", url, err))
+	}
+	fmt.Println(feed)
+	return nil
 }
