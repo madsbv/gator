@@ -4,4 +4,4 @@ goose-create *args:
 
 alias g := run-goose
 run-goose *args:
-    goose -env .env {{args}}
+    goose -env ".env" {{args}}

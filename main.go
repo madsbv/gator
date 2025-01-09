@@ -1,12 +1,15 @@
 package main
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"os"
 
+	_ "github.com/lib/pq"
 	"github.com/madsbv/gator/internal/command"
 	"github.com/madsbv/gator/internal/config"
+	"github.com/madsbv/gator/internal/database"
 	"github.com/madsbv/gator/internal/state"
 )
 
@@ -24,9 +27,14 @@ func run() error {
 		return errors.Join(errors.New("Error reading config file"), err)
 	}
 
-	s := state.State{Config: conf}
+	db, err := sql.Open("postgres", conf.DbUrl)
+	dbQueries := database.New(db)
+
+	s := state.State{Config: conf, Db: *dbQueries}
 	cmds := command.Commands{Map: make(map[string]func(*state.State, command.Command) error)}
 	cmds.Register("login", command.HandlerLogin)
+	cmds.Register("register", command.HandlerRegister)
+	cmds.Register("reset", command.HandlerReset)
 
 	args := os.Args
 	if len(args) < 2 {

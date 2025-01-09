@@ -46,7 +46,8 @@
         devShells.default = pkgs.mkShell {
           packages = with pkgs; [
             postgresql_16_jit
-            sqlx-cli
+            sqlc
+            goose
           ];
 
           shellHook = ''
