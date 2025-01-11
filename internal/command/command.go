@@ -2,11 +2,10 @@ package command
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
-	"time"
 
-	"github.com/google/uuid"
 	"github.com/madsbv/gator/internal/database"
 	"github.com/madsbv/gator/internal/rss"
 	"github.com/madsbv/gator/internal/state"
@@ -59,16 +58,18 @@ func HandlerRegister(s *state.State, cmd Command) error {
 		return errors.New("Missing user name to register")
 	}
 
-	id := uuid.New()
-	currentTime := time.Now()
-	params := database.CreateUserParams{ID: id, CreatedAt: currentTime, UpdatedAt: currentTime, Name: cmd.Args[0]}
+	userName := cmd.Args[0]
 
-	user, err := s.Db.CreateUser(context.Background(), params)
+	user, err := s.Db.CreateUser(context.Background(), userName)
 	if err != nil {
-		return errors.New(fmt.Sprintf("User %s already exists", cmd.Args[0]))
+		return errors.New(fmt.Sprintf("User %s already exists", userName))
 	}
 
-	err = s.Config.SetUser(user.Name)
+	if userName != user.Name {
+		return errors.New(fmt.Sprintf("username %s was saved to the database, but the database returned username %s instead.", userName, user.Name))
+	}
+
+	err = s.Config.SetUser(userName)
 	if err != nil {
 		return errors.New("Error setting user")
 	}
@@ -88,11 +89,42 @@ func HandlerReset(s *state.State, cmd Command) error {
 }
 
 func HandlerAgg(s *state.State, cmd Command) error {
+	if cmd.Name != "agg" {
+		return errors.New("Command name mismatch")
+	}
+
 	url := "https://www.wagslane.dev/index.xml"
 	feed, err := rss.FetchFeed(context.Background(), url)
 	if err != nil {
 		return errors.New(fmt.Sprintf("Error fetching feed at %s: %s", url, err))
 	}
+	fmt.Println(feed)
+	return nil
+}
+
+func HandlerAddFeed(s *state.State, cmd Command) error {
+	if cmd.Name != "addfeed" || len(cmd.Args) != 2 {
+		return errors.New("Command name mismatch or wrong number of arguments. The addfeeds commmand takes two arguments, the name and the url of the feed to add.")
+	}
+
+	user_name := s.Config.CurrentUserName
+	ctx := context.Background()
+	user, err := s.Db.GetUser(ctx, user_name)
+	if err != nil {
+		return errors.New("Error retrieving currently logged in user from database")
+	}
+
+	feedParams := database.CreateFeedParams{
+		Name:   sql.NullString{String: cmd.Args[0], Valid: true},
+		Url:    cmd.Args[1],
+		UserID: user.ID,
+	}
+
+	feed, err := s.Db.CreateFeed(ctx, feedParams)
+	if err != nil {
+		return errors.New(fmt.Sprintf("Error creating feed: %s", err))
+	}
+
 	fmt.Println(feed)
 	return nil
 }
