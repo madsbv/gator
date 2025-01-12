@@ -139,6 +139,8 @@ func HandlerGetAllFeeds(s *state.State, cmd Command) error {
 		return errors.New(fmt.Sprintf("Error fetching feeds from database: %s", err))
 	}
 
-	fmt.Println(feeds)
+	for _, f := range feeds {
+		fmt.Printf("Name: %s\nURL: %s\nAdded by: %s\n\n", f.Name.String, f.Url, f.UserName)
+	}
 	return nil
 }
