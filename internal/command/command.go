@@ -128,3 +128,17 @@ func HandlerAddFeed(s *state.State, cmd Command) error {
 	fmt.Println(feed)
 	return nil
 }
+
+func HandlerGetAllFeeds(s *state.State, cmd Command) error {
+	if cmd.Name != "feeds" {
+		return errors.New("Command name mismatch")
+	}
+
+	feeds, err := s.Db.GetAllFeedsWithUsernames(context.Background())
+	if err != nil {
+		return errors.New(fmt.Sprintf("Error fetching feeds from database: %s", err))
+	}
+
+	fmt.Println(feeds)
+	return nil
+}

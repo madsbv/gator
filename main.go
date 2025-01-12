@@ -37,6 +37,7 @@ func run() error {
 	cmds.Register("reset", command.HandlerReset)
 	cmds.Register("agg", command.HandlerAgg)
 	cmds.Register("addfeed", command.HandlerAddFeed)
+	cmds.Register("feeds", command.HandlerGetAllFeeds)
 
 	args := os.Args
 	if len(args) < 2 {
