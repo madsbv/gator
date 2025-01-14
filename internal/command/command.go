@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/madsbv/gator/internal/database"
 	"github.com/madsbv/gator/internal/rss"
@@ -89,16 +90,25 @@ func HandlerReset(s *state.State, cmd Command) error {
 }
 
 func HandlerAgg(s *state.State, cmd Command) error {
-	if err := cmd.verify("agg", 0); err != nil {
+	if err := cmd.verify("agg", 1); err != nil {
 		return err
 	}
 
-	url := "https://www.wagslane.dev/index.xml"
-	feed, err := rss.FetchFeed(context.Background(), url)
+	duration, err := time.ParseDuration(cmd.Args[0])
 	if err != nil {
-		return errors.New(fmt.Sprintf("Error fetching feed at %s: %s", url, err))
+		return errors.New(fmt.Sprintf("Error parsing passed in time duration: %s\n", err))
 	}
-	fmt.Println(feed)
+
+	fmt.Printf("Collecting feeds every %s\n", duration)
+
+	ticker := time.NewTicker(duration)
+	for ; ; <-ticker.C {
+		err = rss.ScrapeFeeds(s)
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
+
 	return nil
 }
 
