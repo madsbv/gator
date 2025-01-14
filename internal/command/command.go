@@ -102,13 +102,8 @@ func HandlerAgg(s *state.State, cmd Command) error {
 	return nil
 }
 
-func HandlerAddFeed(s *state.State, cmd Command) error {
+func HandlerAddFeed(s *state.State, cmd Command, user database.User) error {
 	if err := cmd.verify("addfeed", 2); err != nil {
-		return err
-	}
-
-	user, err := s.CurrentUser()
-	if err != nil {
 		return err
 	}
 
@@ -148,7 +143,7 @@ func HandlerGetAllFeeds(s *state.State, cmd Command) error {
 	return nil
 }
 
-func HandlerFollow(s *state.State, cmd Command) error {
+func HandlerFollow(s *state.State, cmd Command, user database.User) error {
 	if err := cmd.verify("follow", 1); err != nil {
 		return err
 	}
@@ -156,11 +151,6 @@ func HandlerFollow(s *state.State, cmd Command) error {
 	feed, err := s.Db.GetFeedByUrl(context.Background(), cmd.Args[0])
 	if err != nil {
 		return errors.New(fmt.Sprintf("Error getting feed from database, url: %s", cmd.Args[0]))
-	}
-
-	user, err := s.CurrentUser()
-	if err != nil {
-		return err
 	}
 
 	feedFollow, err := s.Db.CreateFeedFollow(context.Background(), database.CreateFeedFollowParams{UserID: user.ID, FeedID: feed.ID})
@@ -173,13 +163,8 @@ func HandlerFollow(s *state.State, cmd Command) error {
 	return nil
 }
 
-func HandlerFollowing(s *state.State, cmd Command) error {
+func HandlerFollowing(s *state.State, cmd Command, user database.User) error {
 	if err := cmd.verify("following", 0); err != nil {
-		return err
-	}
-
-	user, err := s.CurrentUser()
-	if err != nil {
 		return err
 	}
 

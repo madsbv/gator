@@ -10,6 +10,7 @@ import (
 	"github.com/madsbv/gator/internal/command"
 	"github.com/madsbv/gator/internal/config"
 	"github.com/madsbv/gator/internal/database"
+	"github.com/madsbv/gator/internal/middleware"
 	"github.com/madsbv/gator/internal/state"
 )
 
@@ -36,10 +37,10 @@ func run() error {
 	cmds.Register("register", command.HandlerRegister)
 	cmds.Register("reset", command.HandlerReset)
 	cmds.Register("agg", command.HandlerAgg)
-	cmds.Register("addfeed", command.HandlerAddFeed)
+	cmds.Register("addfeed", middleware.LoggedIn(command.HandlerAddFeed))
 	cmds.Register("feeds", command.HandlerGetAllFeeds)
-	cmds.Register("follow", command.HandlerFollow)
-	cmds.Register("following", command.HandlerFollowing)
+	cmds.Register("follow", middleware.LoggedIn(command.HandlerFollow))
+	cmds.Register("following", middleware.LoggedIn(command.HandlerFollowing))
 
 	args := os.Args
 	if len(args) < 2 {
