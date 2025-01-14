@@ -36,6 +36,7 @@ func run() error {
 	cmds.Register("login", command.HandlerLogin)
 	cmds.Register("register", command.HandlerRegister)
 	cmds.Register("reset", command.HandlerReset)
+	cmds.Register("users", command.HandlerUsers)
 	cmds.Register("agg", command.HandlerAgg)
 	cmds.Register("addfeed", middleware.LoggedIn(command.HandlerAddFeed))
 	cmds.Register("feeds", command.HandlerGetAllFeeds)

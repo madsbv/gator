@@ -32,6 +32,7 @@ Gator supports tracking RSS feeds for multiple users from the same running insta
 - `gator login username`: Log in as user `username`.
 - `gator register username`: Register `username` as a new user.
 - `gator reset`: Deletes all saved user and feed data. **DANGEROUS**
+- `gator users`: Lists all users and shows which is currently logged in.
 - `gator agg duration`: Runs the gator service to aggregate posts from all feeds tracked by gator, for every user. Gator retrieves posts from one RSS feed at a time, scraping the most outdated feed every `duration`. Here `duration` can be anything that can be parsed by Go's `time.ParseDuration`. Examples include `5s, 1m, 3h`. For example, running `gator agg 1m` means that one feed is fetched every minute. If you are following 5 feeds, it takes 5 minutes to retrieve posts from all 5 feeds.
 - `gator addfeed name url`: Add the RSS feed at location `url` to the collection of tracked feeds, under the name `name`.
 - `gator feeds`: List all feeds in the database.

@@ -90,6 +90,31 @@ func HandlerReset(s *state.State, cmd Command) error {
 	return s.Db.DeleteAllUsers(context.Background())
 }
 
+func HandlerUsers(s *state.State, cmd Command) error {
+	if err := cmd.verify("users", 0); err != nil {
+		return err
+	}
+
+	users, err := s.Db.GetAllUsers(context.Background())
+	if err != nil {
+		return errors.Join(fmt.Errorf("Error getting users from database"), err)
+	}
+
+	currentUser, err := s.CurrentUser()
+	if err != nil {
+		return errors.Join(fmt.Errorf("Error getting currently logged in user"), err)
+	}
+
+	for _, user := range users {
+		s := fmt.Sprintf("* %s", user.Name)
+		if user.ID == currentUser.ID {
+			s += " (current)"
+		}
+		fmt.Println(s)
+	}
+	return nil
+}
+
 func HandlerAgg(s *state.State, cmd Command) error {
 	if err := cmd.verify("agg", 1); err != nil {
 		return err
