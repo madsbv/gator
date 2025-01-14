@@ -181,6 +181,19 @@ func HandlerFollowing(s *state.State, cmd Command, user database.User) error {
 	return nil
 }
 
+func HandlerUnfollow(s *state.State, cmd Command, user database.User) error {
+	if err := cmd.verify("unfollow", 1); err != nil {
+		return err
+	}
+
+	err := s.Db.DeleteFeedFollowByUrl(context.Background(), database.DeleteFeedFollowByUrlParams{Url: cmd.Args[0], UserID: user.ID})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (cmd *Command) verify(name string, numArgs int) error {
 	if cmd.Name != name || len(cmd.Args) != numArgs {
 		return errors.New(fmt.Sprintf("Command name mismatch or wrong number of arguments, expected %d arguments for command name %s", numArgs, name))

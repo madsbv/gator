@@ -41,6 +41,7 @@ func run() error {
 	cmds.Register("feeds", command.HandlerGetAllFeeds)
 	cmds.Register("follow", middleware.LoggedIn(command.HandlerFollow))
 	cmds.Register("following", middleware.LoggedIn(command.HandlerFollowing))
+	cmds.Register("unfollow", middleware.LoggedIn(command.HandlerUnfollow))
 
 	args := os.Args
 	if len(args) < 2 {
