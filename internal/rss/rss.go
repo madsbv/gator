@@ -2,13 +2,16 @@ package rss
 
 import (
 	"context"
+	"database/sql"
 	"encoding/xml"
 	"errors"
 	"fmt"
 	"html"
 	"io"
 	"net/http"
+	"time"
 
+	"github.com/madsbv/gator/internal/database"
 	"github.com/madsbv/gator/internal/state"
 )
 
@@ -81,8 +84,31 @@ func ScrapeFeeds(s *state.State) error {
 	s.Db.MarkFeedFetched(context.Background(), feed.ID)
 
 	for _, item := range feed_content.Channel.Item {
-		fmt.Println(item.Title)
+		pubDate, err := parseTime(item.PubDate)
+
+		createParams := database.CreatePostParams{
+			Title:       item.Title,
+			Url:         item.Link,
+			Description: sql.NullString{String: item.Description, Valid: len(item.Description) != 0},
+			PublishedAt: sql.NullTime{Time: pubDate, Valid: err == nil},
+			FeedID:      feed.ID,
+		}
+
+		_, err = s.Db.CreatePost(context.Background(), createParams)
+		if err != nil && err.Error() != "pq: duplicate key value violates unique constraint \"posts_url_key\"" {
+			return errors.Join(fmt.Errorf("Error creating post %s\n", item.Title), err)
+		}
 	}
 
 	return nil
+}
+
+func parseTime(s string) (time.Time, error) {
+	// layout := "Tue, 14 Jan 2025 20:19:14 +0000"
+	layout := time.RFC1123Z
+	t, err := time.Parse(layout, s)
+	if err != nil {
+		fmt.Printf("Error parsing time string '%s': %s\n", s, err)
+	}
+	return t, err
 }
