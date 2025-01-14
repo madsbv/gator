@@ -42,6 +42,7 @@ func run() error {
 	cmds.Register("follow", middleware.LoggedIn(command.HandlerFollow))
 	cmds.Register("following", middleware.LoggedIn(command.HandlerFollowing))
 	cmds.Register("unfollow", middleware.LoggedIn(command.HandlerUnfollow))
+	cmds.Register("browse", middleware.LoggedIn(command.HandlerBrowse))
 
 	args := os.Args
 	if len(args) < 2 {

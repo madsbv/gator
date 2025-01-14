@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/madsbv/gator/internal/database"
@@ -199,6 +200,34 @@ func HandlerUnfollow(s *state.State, cmd Command, user database.User) error {
 	err := s.Db.DeleteFeedFollowByUrl(context.Background(), database.DeleteFeedFollowByUrlParams{Url: cmd.Args[0], UserID: user.ID})
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func HandlerBrowse(s *state.State, cmd Command, user database.User) error {
+	if cmd.Name != "browse" || len(cmd.Args) > 1 {
+		return errors.New("Command name mismatch or wrong number of arguments, expected at most 1 argument for command name browse")
+	}
+
+	var limit int32
+	if len(cmd.Args) == 1 {
+		parsed, err := strconv.ParseInt(cmd.Args[0], 0, 32)
+		if err != nil {
+			return errors.Join(fmt.Errorf("Error parsing argument %s as int32", cmd.Args[0]), err)
+		}
+		limit = int32(parsed)
+	} else {
+		limit = 2
+	}
+
+	posts, err := s.Db.GetPostsForUser(context.Background(), database.GetPostsForUserParams{UserID: user.ID, Limit: limit})
+	if err != nil {
+		return errors.Join(fmt.Errorf("Error retrieving posts for user %s", user.Name), err)
+	}
+
+	for _, post := range posts {
+		fmt.Printf("Title: %s\nDescription: %s\nPublished at: %s\nURL: %s\n\n\n", post.Title, post.Description.String, post.PublishedAt.Time, post.Url)
 	}
 
 	return nil
