@@ -38,6 +38,8 @@ func run() error {
 	cmds.Register("agg", command.HandlerAgg)
 	cmds.Register("addfeed", command.HandlerAddFeed)
 	cmds.Register("feeds", command.HandlerGetAllFeeds)
+	cmds.Register("follow", command.HandlerFollow)
+	cmds.Register("following", command.HandlerFollowing)
 
 	args := os.Args
 	if len(args) < 2 {

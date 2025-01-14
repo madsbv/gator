@@ -34,8 +34,8 @@ func (c *Commands) Run(s *state.State, cmd Command) error {
 }
 
 func HandlerLogin(s *state.State, cmd Command) error {
-	if cmd.Name != "login" || len(cmd.Args) != 1 {
-		return errors.New("Invalid login command")
+	if err := cmd.verify("login", 1); err != nil {
+		return err
 	}
 
 	name := cmd.Args[0]
@@ -54,8 +54,8 @@ func HandlerLogin(s *state.State, cmd Command) error {
 }
 
 func HandlerRegister(s *state.State, cmd Command) error {
-	if cmd.Name != "register" || len(cmd.Args) != 1 {
-		return errors.New("Missing user name to register")
+	if err := cmd.verify("register", 1); err != nil {
+		return err
 	}
 
 	userName := cmd.Args[0]
@@ -81,16 +81,16 @@ func HandlerRegister(s *state.State, cmd Command) error {
 }
 
 func HandlerReset(s *state.State, cmd Command) error {
-	if cmd.Name != "reset" || len(cmd.Args) != 0 {
-		return errors.New("Unexpected arguments")
+	if err := cmd.verify("reset", 0); err != nil {
+		return err
 	}
 
 	return s.Db.DeleteAllUsers(context.Background())
 }
 
 func HandlerAgg(s *state.State, cmd Command) error {
-	if cmd.Name != "agg" {
-		return errors.New("Command name mismatch")
+	if err := cmd.verify("agg", 0); err != nil {
+		return err
 	}
 
 	url := "https://www.wagslane.dev/index.xml"
@@ -103,15 +103,13 @@ func HandlerAgg(s *state.State, cmd Command) error {
 }
 
 func HandlerAddFeed(s *state.State, cmd Command) error {
-	if cmd.Name != "addfeed" || len(cmd.Args) != 2 {
-		return errors.New("Command name mismatch or wrong number of arguments. The addfeeds commmand takes two arguments, the name and the url of the feed to add.")
+	if err := cmd.verify("addfeed", 2); err != nil {
+		return err
 	}
 
-	user_name := s.Config.CurrentUserName
-	ctx := context.Background()
-	user, err := s.Db.GetUser(ctx, user_name)
+	user, err := s.CurrentUser()
 	if err != nil {
-		return errors.New("Error retrieving currently logged in user from database")
+		return err
 	}
 
 	feedParams := database.CreateFeedParams{
@@ -120,9 +118,14 @@ func HandlerAddFeed(s *state.State, cmd Command) error {
 		UserID: user.ID,
 	}
 
-	feed, err := s.Db.CreateFeed(ctx, feedParams)
+	feed, err := s.Db.CreateFeed(context.Background(), feedParams)
 	if err != nil {
 		return errors.New(fmt.Sprintf("Error creating feed: %s", err))
+	}
+
+	_, err = s.Db.CreateFeedFollow(context.Background(), database.CreateFeedFollowParams{UserID: user.ID, FeedID: feed.ID})
+	if err != nil {
+		return errors.New(fmt.Sprintf("Error creating feed_follow entry for user %s and feed %s", user.Name, feed.Name))
 	}
 
 	fmt.Println(feed)
@@ -130,8 +133,8 @@ func HandlerAddFeed(s *state.State, cmd Command) error {
 }
 
 func HandlerGetAllFeeds(s *state.State, cmd Command) error {
-	if cmd.Name != "feeds" {
-		return errors.New("Command name mismatch")
+	if err := cmd.verify("feeds", 0); err != nil {
+		return err
 	}
 
 	feeds, err := s.Db.GetAllFeedsWithUsernames(context.Background())
@@ -142,5 +145,61 @@ func HandlerGetAllFeeds(s *state.State, cmd Command) error {
 	for _, f := range feeds {
 		fmt.Printf("Name: %s\nURL: %s\nAdded by: %s\n\n", f.Name.String, f.Url, f.UserName)
 	}
+	return nil
+}
+
+func HandlerFollow(s *state.State, cmd Command) error {
+	if err := cmd.verify("follow", 1); err != nil {
+		return err
+	}
+
+	feed, err := s.Db.GetFeedByUrl(context.Background(), cmd.Args[0])
+	if err != nil {
+		return errors.New(fmt.Sprintf("Error getting feed from database, url: %s", cmd.Args[0]))
+	}
+
+	user, err := s.CurrentUser()
+	if err != nil {
+		return err
+	}
+
+	feedFollow, err := s.Db.CreateFeedFollow(context.Background(), database.CreateFeedFollowParams{UserID: user.ID, FeedID: feed.ID})
+
+	if err != nil {
+		return errors.New(fmt.Sprintf("Error following feed %s as user %s", feed.Name.String, user.Name))
+	}
+
+	fmt.Printf("User %s successfully followed feed %s\n", feedFollow.UserName, feedFollow.FeedName.String)
+	return nil
+}
+
+func HandlerFollowing(s *state.State, cmd Command) error {
+	if err := cmd.verify("following", 0); err != nil {
+		return err
+	}
+
+	user, err := s.CurrentUser()
+	if err != nil {
+		return err
+	}
+
+	follows, err := s.Db.GetFeedFollowsForUser(context.Background(), user.ID)
+	if err != nil {
+		return errors.New(fmt.Sprintf("Error getting feed follows for user %s from database: %s", user.Name, err))
+	}
+
+	fmt.Printf("User %s follows the following feeds:\n", user.Name)
+	for _, f := range follows {
+		fmt.Println(f.FeedName.String)
+	}
+
+	return nil
+}
+
+func (cmd *Command) verify(name string, numArgs int) error {
+	if cmd.Name != name || len(cmd.Args) != numArgs {
+		return errors.New(fmt.Sprintf("Command name mismatch or wrong number of arguments, expected %d arguments for command name %s", numArgs, name))
+	}
+
 	return nil
 }
